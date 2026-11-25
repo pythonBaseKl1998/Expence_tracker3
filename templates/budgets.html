@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Бюджеты{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <h3 class="mb-0">Бюджеты</h3>
+  <div class="d-flex gap-2 align-items-center">
+    <form class="d-flex gap-2" method="get">
+      <select name="month" class="form-select" style="min-width:200px">
+        <option value="">Все месяцы</option>
+        {% for m in available_months %}
+          <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>
+            {{ m|month_ru }}
+          </option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-outline-primary" type="submit">Фильтр</button>
+    </form>
+    <a class="btn btn-primary" href="{{ url_for('add_budget') }}">+ Новый бюджет</a>
+  </div>
+</div>
+
+<div class="card"><div class="card-body">
+  <table class="table table-sm align-middle mb-0">
+    <thead><tr>
+      <th>Месяц</th><th>Категория</th><th class="text-end">Лимит</th><th></th>
+    </tr></thead>
+    <tbody>
+    {% for b in budgets %}
+      <tr>
+        <td>{{ b.month|month_ru }}</td>
+        <td>{{ b.category.name }}</td>
+        <td class="text-end">{{ "%.2f"|format(b.limit_amount) }} ₽</td>
+        <td class="text-end">
+          <form method="post" action="{{ url_for('delete_budget', budget_id=b.id) }}"
+                onsubmit="return confirm('Удалить бюджет?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-sm btn-outline-danger" type="submit">Удалить</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4" class="text-center text-muted">Бюджетов ещё нет</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% endblock %}

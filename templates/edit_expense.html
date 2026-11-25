@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Редактирование{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card"><div class="card-body">
+      <h4 class="card-title mb-3">Редактирование записи</h4>
+      <div class="text-muted mb-3">Создана: {{ expense.created_at|localtime }}</div>
+      <form method="post" id="expenseForm" novalidate>
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+          {{ form.type.label(class="form-label") }}
+          {{ form.type(class="form-select") }}
+        </div>
+        <div class="mb-3">
+          {{ form.amount.label(class="form-label") }}
+          {{ form.amount(class="form-control", step="0.01") }}
+        </div>
+        <div class="mb-3">
+          {{ form.category_id.label(class="form-label") }}
+          {{ form.category_id(class="form-select") }}
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label" for="dateInput">Дата</label>
+            <input type="text" id="dateInput" name="date"
+                   class="form-control" placeholder="ДД.ММ.ГГГГ"
+                   value="{{ form.date.data.strftime('%d.%m.%Y') if form.date.data else '' }}"
+                   autocomplete="off" required>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label" for="timeInput">Время (ЧЧ:ММ)</label>
+            <input type="text" id="timeInput" name="time"
+                   class="form-control" placeholder="ЧЧ:ММ"
+                   value="{{ form.time.data or '' }}"
+                   autocomplete="off" inputmode="numeric" maxlength="5">
+          </div>
+        </div>
+        <div class="mb-3">
+          {{ form.description.label(class="form-label") }}
+          {{ form.description(class="form-control") }}
+        </div>
+        {{ form.submit(class="btn btn-primary") }}
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Отмена</a>
+      </form>
+    </div></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/ru.js"></script>
+<script>
+  flatpickr("#dateInput", {
+    locale: "ru",
+    dateFormat: "d.m.Y",
+    allowInput: true,
+  });
+
+  const t = document.getElementById("timeInput");
+  t.addEventListener("input", (e) => {
+    let v = e.target.value.replace(/[^\d:]/g, "");
+    if (v.length === 2 && !v.includes(":")) v += ":";
+    e.target.value = v.slice(0, 5);
+  });
+
+  document.getElementById("expenseForm").addEventListener("submit", (e) => {
+    const dEl = document.getElementById("dateInput");
+    const d = dEl.value.trim();
+    const m = d.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+    if (!m) {
+      e.preventDefault();
+      alert("Дата должна быть в формате ДД.ММ.ГГГГ");
+      return;
+    }
+    dEl.name = "_ignored_date";
+    const hidden = document.createElement("input");
+    hidden.type = "hidden";
+    hidden.name = "date";
+    hidden.value = `${m[3]}-${m[2]}-${m[1]}`;
+    e.target.appendChild(hidden);
+  });
+</script>
+{% endblock %}

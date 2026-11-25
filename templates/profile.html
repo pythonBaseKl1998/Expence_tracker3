@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Профиль{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card"><div class="card-body">
+      <h4 class="card-title mb-3">Профиль</h4>
+      <p><strong>Логин:</strong> {{ current_user.username }}</p>
+      <p><strong>Имя:</strong> {{ current_user.display_name }}</p>
+      <p><strong>Часовой пояс:</strong> UTC{{ '%+d'|format(user_tz_offset // 60) }}
+        {% if user_tz_offset % 60 %}
+          :{{ '%02d'|format(user_tz_offset % 60|abs) }}
+        {% endif %}
+      </p>
+      <hr>
+      <form method="post">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+          {{ form.name.label(class="form-label") }}
+          {{ form.name(class="form-control") }}
+        </div>
+        <hr>
+        <h6>Смена пароля <span class="text-muted small">(необязательно)</span></h6>
+        <div class="mb-3">
+          {{ form.old_password.label(class="form-label") }}
+          {{ form.old_password(class="form-control") }}
+        </div>
+        <div class="mb-3">
+          {{ form.new_password.label(class="form-label") }}
+          {{ form.new_password(class="form-control") }}
+        </div>
+        {{ form.submit(class="btn btn-primary") }}
+      </form>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Аналитика{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <h3 class="mb-0">Аналитика</h3>
+  <form class="d-flex gap-2" method="get">
+    <select name="month" class="form-select" style="min-width:200px">
+      <option value="">Все месяцы</option>
+      {% for m in available_months %}
+        <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>{{ m|month_ru }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn btn-primary" type="submit">Применить</button>
+  </form>
+</div>
+
+<!-- Навигация по месяцам -->
+<div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+  <a class="btn btn-sm btn-outline-secondary"
+     href="{{ url_for('analytics', month=nav.prev_month) }}">
+    ← Предыдущий
+  </a>
+  <span class="fw-semibold">{{ nav.selected_label }}</span>
+  {% if nav.can_next and nav.next_month %}
+    <a class="btn btn-sm btn-outline-secondary"
+       href="{{ url_for('analytics', month=nav.next_month) }}">
+      Следующий →
+    </a>
+  {% endif %}
+  {% if selected_month %}
+    <a class="btn btn-sm btn-link" href="{{ url_for('analytics') }}">Все месяцы</a>
+  {% endif %}
+  <a class="btn btn-sm btn-link ms-auto"
+     href="{{ url_for('analytics', month=user_current_month) }}">
+    Текущий месяц
+  </a>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><div class="card"><div class="card-body">
+    <div class="small text-muted">Всего расходов</div>
+    <div class="fs-5">{{ "%.2f"|format(total) }} ₽</div>
+  </div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body">
+    <div class="small text-muted">Среднее в день</div>
+    <div class="fs-5">{{ "%.2f"|format(avg_per_day) }} ₽</div>
+  </div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body">
+    <div class="small text-muted">Максимальный день</div>
+    <div class="fs-5">{{ max_day[0] }}</div>
+    <div class="small">{{ "%.2f"|format(max_day[1]) }} ₽</div>
+  </div></div></div>
+  <div class="col-md-3"><div class="card"><div class="card-body">
+    <div class="small text-muted">Топ-5 категорий</div>
+    <ul class="list-unstyled mb-0 small">
+      {% for name, val in top5 %}
+        <li>{{ name }} — {{ "%.2f"|format(val) }} ₽</li>
+      {% endfor %}
+    </ul>
+  </div></div></div>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card"><div class="card-body">
+      <h6>Категории</h6>
+      <div class="chart-container"><canvas id="analyticsCat"></canvas></div>
+    </div></div>
+  </div>
+  <div class="col-md-6">
+    <div class="card"><div class="card-body">
+      <h6>По дням</h6>
+      <div class="chart-container"><canvas id="analyticsDay"></canvas></div>
+    </div></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const selectedMonth = {{ (selected_month or '')|tojson }};
+  const catUrl = "{{ url_for('api_chart_category') }}" +
+    (selectedMonth ? "?month=" + encodeURIComponent(selectedMonth) : "");
+
+  fetch(catUrl).then(r => r.json()).then(data => {
+    if (!data.labels.length) return;
+    new Chart(document.getElementById("analyticsCat"), {
+      type: "pie",
+      data: {
+        labels: data.labels,
+        datasets: [{ data: data.values, backgroundColor: [
+          "#4e79a7","#f28e2b","#e15759","#76b7b2",
+          "#59a14f","#edc948","#b07aa1","#ff9da7"
+        ]}],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: "bottom" } },
+      },
+    });
+  });
+
+  const byDay = {{ by_day|tojson }};
+  new Chart(document.getElementById("analyticsDay"), {
+    type: "line",
+    data: {
+      labels: byDay.map(x => x[0]),
+      datasets: [{
+        label: "Расходы, ₽",
+        data: byDay.map(x => x[1]),
+        borderColor: "#e15759",
+        backgroundColor: "rgba(225,87,89,0.15)",
+        tension: 0.25,
+        fill: true,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } },
+    },
+  });
+</script>
+{% endblock %}
